@@ -17,7 +17,7 @@ function Laboratory() {
 
     const fetchLabTests = async () => {
         try {
-            let url = 'http://localhost:5000/api/lab';
+            let url = '/api/lab';
             const params = new URLSearchParams();
             if (user?.role === 'Doctor') params.append('doctor_id', user.id);
             if (filter !== 'All') params.append('status', filter);
@@ -33,7 +33,7 @@ function Laboratory() {
 
     const fetchPatients = async () => {
         try {
-            const res = await fetch('http://localhost:5000/api/patients');
+            const res = await fetch('/api/patients');
             setPatients(await res.json());
         } catch(err) {}
     };
@@ -50,7 +50,7 @@ function Laboratory() {
         e.preventDefault();
         setIsLoading(true);
         try {
-            const res = await fetch('http://localhost:5000/api/lab', {
+            const res = await fetch('/api/lab', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ ...formData, doctor_id: user.id })
@@ -70,7 +70,7 @@ function Laboratory() {
         const resultText = prompt('Enter Lab Test Results:');
         if (!resultText) return;
         try {
-            const res = await fetch(`http://localhost:5000/api/lab/${id}/result`, {
+            const res = await fetch(`/api/lab/${id}/result`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ results: resultText })

@@ -25,7 +25,7 @@ function Pharmacy() {
 
     const fetchInventory = async () => {
         try {
-            const res = await fetch('http://localhost:5000/api/pharmacy', { headers: getAuthHeaders() });
+            const res = await fetch('/api/pharmacy', { headers: getAuthHeaders() });
             const data = await res.json();
             if (Array.isArray(data)) setInventory(data);
         } catch (err) {
@@ -35,7 +35,7 @@ function Pharmacy() {
 
     const fetchPrescriptions = async () => {
         try {
-            const res = await fetch('http://localhost:5000/api/prescriptions?status=Pending Dispense', { headers: getAuthHeaders() });
+            const res = await fetch('/api/prescriptions?status=Pending Dispense', { headers: getAuthHeaders() });
             const data = await res.json();
             if (Array.isArray(data)) setPrescriptions(data);
         } catch (err) {
@@ -45,7 +45,7 @@ function Pharmacy() {
 
     const fetchBatches = async (drugId) => {
         try {
-            const res = await fetch(`http://localhost:5000/api/pharmacy/${drugId}/batches`, { headers: getAuthHeaders() });
+            const res = await fetch(`/api/pharmacy/${drugId}/batches`, { headers: getAuthHeaders() });
             const data = await res.json();
             if (Array.isArray(data)) setBatches(data);
         } catch (err) {
@@ -62,7 +62,7 @@ function Pharmacy() {
     const handleAddDrug = async (e) => {
         e.preventDefault();
         try {
-            const res = await fetch('http://localhost:5000/api/pharmacy', {
+            const res = await fetch('/api/pharmacy', {
                 method: 'POST',
                 headers: getAuthHeaders(),
                 body: JSON.stringify(formData)
@@ -80,7 +80,7 @@ function Pharmacy() {
     const handleAddBatch = async (e) => {
         e.preventDefault();
         try {
-            const res = await fetch(`http://localhost:5000/api/pharmacy/${managingDrug.id}/batches`, {
+            const res = await fetch(`/api/pharmacy/${managingDrug.id}/batches`, {
                 method: 'POST',
                 headers: getAuthHeaders(),
                 body: JSON.stringify(batchForm)
@@ -98,7 +98,7 @@ function Pharmacy() {
     const handleDispense = async (rx) => {
         setIsLoading(true);
         try {
-            const res = await fetch(`http://localhost:5000/api/prescriptions/${rx.id}/dispense`, {
+            const res = await fetch(`/api/prescriptions/${rx.id}/dispense`, {
                 method: 'PUT',
                 headers: getAuthHeaders()
             });

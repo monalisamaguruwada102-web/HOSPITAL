@@ -15,8 +15,8 @@ function Billing() {
     const fetchData = async () => {
         try {
             const [billRes, patRes] = await Promise.all([
-                fetch('http://localhost:5000/api/billing'),
-                fetch('http://localhost:5000/api/patients')
+                fetch('/api/billing'),
+                fetch('/api/patients')
             ]);
             const billData = await billRes.json();
             const patData = await patRes.json();
@@ -34,7 +34,7 @@ function Billing() {
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
-            const res = await fetch('http://localhost:5000/api/billing', {
+            const res = await fetch('/api/billing', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ ...formData, amount: parseFloat(formData.amount) })
@@ -51,7 +51,7 @@ function Billing() {
 
     const updateStatus = async (id, status) => {
         try {
-            const res = await fetch(`http://localhost:5000/api/billing/${id}/status`, {
+            const res = await fetch(`/api/billing/${id}/status`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ status })

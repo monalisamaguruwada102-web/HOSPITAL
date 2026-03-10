@@ -31,14 +31,14 @@ function Appointments() {
     const fetchData = async () => {
         try {
             const url = user?.role === 'Doctor' 
-                ? `http://localhost:5000/api/appointments?doctor_id=${user.id}`
-                : 'http://localhost:5000/api/appointments';
+                ? `/api/appointments?doctor_id=${user.id}`
+                : '/api/appointments';
 
             const [appRes, patRes, docRes, invRes] = await Promise.all([
                 fetch(url, { headers: getAuthHeaders() }),
-                fetch('http://localhost:5000/api/patients', { headers: getAuthHeaders() }),
-                fetch('http://localhost:5000/api/users/doctors', { headers: getAuthHeaders() }),
-                fetch('http://localhost:5000/api/pharmacy', { headers: getAuthHeaders() })
+                fetch('/api/patients', { headers: getAuthHeaders() }),
+                fetch('/api/users/doctors', { headers: getAuthHeaders() }),
+                fetch('/api/pharmacy', { headers: getAuthHeaders() })
             ]);
             
             const appData = await appRes.json();
@@ -68,7 +68,7 @@ function Appointments() {
         e.preventDefault();
         setIsLoading(true);
         try {
-            const res = await fetch('http://localhost:5000/api/appointments', {
+            const res = await fetch('/api/appointments', {
                 method: 'POST',
                 headers: getAuthHeaders(),
                 body: JSON.stringify(formData)
@@ -86,7 +86,7 @@ function Appointments() {
 
     const updateStatus = async (id, status) => {
         try {
-            const res = await fetch(`http://localhost:5000/api/appointments/${id}/status`, {
+            const res = await fetch(`/api/appointments/${id}/status`, {
                 method: 'PUT',
                 headers: getAuthHeaders(),
                 body: JSON.stringify({ status })
@@ -102,7 +102,7 @@ function Appointments() {
     const approveAppointment = async (id, status) => {
         const notes = prompt(`Enter optional notes to attach to this appointment:`);
         try {
-            const res = await fetch(`http://localhost:5000/api/appointments/${id}/approve`, {
+            const res = await fetch(`/api/appointments/${id}/approve`, {
                 method: 'PUT',
                 headers: getAuthHeaders(),
                 body: JSON.stringify({ status, doctor_notes: notes || '' })
@@ -125,7 +125,7 @@ function Appointments() {
                 drug_id: prescriptionData.drug_id,
                 dosage: prescriptionData.dosage
             };
-            const res = await fetch('http://localhost:5000/api/prescriptions', {
+            const res = await fetch('/api/prescriptions', {
                 method: 'POST',
                 headers: getAuthHeaders(),
                 body: JSON.stringify(payload)

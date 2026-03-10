@@ -2,7 +2,7 @@ const sqlite3 = require('sqlite3').verbose();
 const fs = require('fs');
 const path = require('path');
 
-const dbPath = path.resolve(__dirname, 'ihms.db');
+const dbPath = process.env.DB_PATH || path.resolve(__dirname, 'ihms.db');
 
 const db = new sqlite3.Database(dbPath, (err) => {
     if (err) {

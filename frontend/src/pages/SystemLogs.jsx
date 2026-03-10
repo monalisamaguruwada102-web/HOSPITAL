@@ -9,7 +9,7 @@ function SystemLogs() {
         if (user?.role !== 'Admin') return;
         const fetchLogs = async () => {
             try {
-                const res = await fetch('http://localhost:5000/api/audit-logs', {
+                const res = await fetch('/api/audit-logs', {
                     headers: { 'Authorization': `Bearer ${localStorage.getItem('ihms_token')}` }
                 });
                 const data = await res.json();

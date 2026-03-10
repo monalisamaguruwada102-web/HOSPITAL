@@ -29,7 +29,7 @@ function Patients() {
 
     const fetchPatients = async () => {
         try {
-            const res = await fetch('http://localhost:5000/api/patients', { headers: getAuthHeaders() });
+            const res = await fetch('/api/patients', { headers: getAuthHeaders() });
             const data = await res.json();
             if (Array.isArray(data)) setPatients(data);
         } catch (err) {
@@ -53,7 +53,7 @@ function Patients() {
         e.preventDefault();
         setIsLoading(true);
         try {
-            const res = await fetch('http://localhost:5000/api/patients', {
+            const res = await fetch('/api/patients', {
                 method: 'POST',
                 headers: getAuthHeaders(),
                 body: JSON.stringify(formData)
@@ -74,7 +74,7 @@ function Patients() {
         setSelectedPatient(patient);
         setShowVitalsForm(false);
         try {
-            const res = await fetch(`http://localhost:5000/api/patients/${patient.id}/ehr`, { headers: getAuthHeaders() });
+            const res = await fetch(`/api/patients/${patient.id}/ehr`, { headers: getAuthHeaders() });
             const data = await res.json();
             if (Array.isArray(data)) setEhrTimeline(data);
         } catch (err) {
@@ -86,7 +86,7 @@ function Patients() {
         e.preventDefault();
         setIsLoading(true);
         try {
-            const res = await fetch(`http://localhost:5000/api/patients/${selectedPatient.id}/vitals`, {
+            const res = await fetch(`/api/patients/${selectedPatient.id}/vitals`, {
                 method: 'POST',
                 headers: getAuthHeaders(),
                 body: JSON.stringify(vitalsData)

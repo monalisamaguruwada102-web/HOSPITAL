@@ -14,11 +14,11 @@ function Dashboard() {
         const fetchDashboardData = async () => {
             try {
                 const [patRes, labRes, pharmRes, billRes, apptRes] = await Promise.all([
-                    fetch('http://localhost:5000/api/patients'),
-                    fetch('http://localhost:5000/api/lab'),
-                    fetch('http://localhost:5000/api/pharmacy'),
-                    fetch('http://localhost:5000/api/billing'),
-                    fetch('http://localhost:5000/api/appointments')
+                    fetch('/api/patients'),
+                    fetch('/api/lab'),
+                    fetch('/api/pharmacy'),
+                    fetch('/api/billing'),
+                    fetch('/api/appointments')
                 ]);
 
                 const patients = await patRes.json();
