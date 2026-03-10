@@ -57,10 +57,7 @@ app.post('/api/auth/register', (req, res) => {
     );
 });
 
-// Basic Route
-app.get('/', (req, res) => {
-    res.send('IHMS API is running.');
-});
+
 
 // Global API Auth Middleware (except login)
 const requireRole = (roles) => {
