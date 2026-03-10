@@ -509,11 +509,12 @@ app.put('/api/billing/:id/status', (req, res) => {
 if (process.env.NODE_ENV === 'production') {
     app.use(express.static(path.join(__dirname, '../frontend/dist')));
     
-    app.get('/:path*', (req, res) => {
+    // Middleware to serve index.html for any non-API routes (SPA support)
+    app.use((req, res, next) => {
         if (!req.path.startsWith('/api')) {
             res.sendFile(path.resolve(__dirname, '../frontend/dist', 'index.html'));
         } else {
-            res.status(404).json({ error: 'API route not found' });
+            next();
         }
     });
 }
