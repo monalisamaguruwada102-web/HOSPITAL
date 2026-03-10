@@ -12,6 +12,7 @@ app.use(cors());
 app.use(express.json());
 
 // ─── Auth Middleware ───────────────────────────────────────────────────────────
+// ─── Middleware ───────────────────────────────────────────────────────────────
 const authenticate = (req, res, next) => {
     const authHeader = req.headers['authorization'];
     const token = authHeader && authHeader.split(' ')[1];
@@ -23,6 +24,15 @@ const authenticate = (req, res, next) => {
     } catch (err) {
         res.status(403).json({ error: 'Invalid token.' });
     }
+};
+
+const requireRole = (roles) => {
+    return (req, res, next) => {
+        if (!req.user || !roles.includes(req.user.role)) {
+            return res.status(403).json({ error: 'Access denied. Insufficient permissions.' });
+        }
+        next();
+    };
 };
 
 // ─── Auth API ─────────────────────────────────────────────────────────────────
@@ -83,15 +93,7 @@ app.put('/api/admin/approve-user/:id', authenticate, requireRole(['Admin']), (re
 
 
 
-// Global API Auth Middleware (except login)
-const requireRole = (roles) => {
-    return (req, res, next) => {
-        if (!req.user || !roles.includes(req.user.role)) {
-            return res.status(403).json({ error: 'Access denied. Insufficient permissions.' });
-        }
-        next();
-    };
-};
+// ─── Auth API ─────────────────────────────────────────────────────────────────
 // Global Audit Logging Middleware
 const auditLogger = (req, res, next) => {
     // Only log POST, PUT, DELETE
