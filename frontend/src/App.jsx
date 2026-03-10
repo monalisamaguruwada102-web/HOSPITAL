@@ -1,0 +1,65 @@
+import { useState, useEffect } from 'react';
+import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
+import './index.css';
+
+// Components
+import Sidebar from './components/Sidebar';
+import Header from './components/Header';
+import Dashboard from './pages/Dashboard';
+import Patients from './pages/Patients';
+import Appointments from './pages/Appointments';
+import Laboratory from './pages/Laboratory';
+import Pharmacy from './pages/Pharmacy';
+import Billing from './pages/Billing';
+import SystemLogs from './pages/SystemLogs';
+
+import { Navigate } from 'react-router-dom';
+import Login from './pages/Login';
+import Register from './pages/Register';
+
+// Protected Route Wrapper
+const ProtectedRoute = ({ children }) => {
+  const token = localStorage.getItem('ihms_token');
+  if (!token) {
+    return <Navigate to="/login" replace />;
+  }
+  return children;
+};
+
+function AppLayout() {
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  return (
+    <div className="app-container">
+      <Sidebar isOpen={sidebarOpen} closeSidebar={() => setSidebarOpen(false)} />
+      <div className="main-content">
+        <Header toggleSidebar={() => setSidebarOpen(!sidebarOpen)} />
+        <div className="animate-fade-in">
+          <Routes>
+            <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+            <Route path="/patients" element={<ProtectedRoute><Patients /></ProtectedRoute>} />
+            <Route path="/appointments" element={<ProtectedRoute><Appointments /></ProtectedRoute>} />
+            <Route path="/laboratory" element={<ProtectedRoute><Laboratory /></ProtectedRoute>} />
+            <Route path="/pharmacy" element={<ProtectedRoute><Pharmacy /></ProtectedRoute>} />
+            <Route path="/billing" element={<ProtectedRoute><Billing /></ProtectedRoute>} />
+            <Route path="/system-logs" element={<ProtectedRoute><SystemLogs /></ProtectedRoute>} />
+          </Routes>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function App() {
+  return (
+    <Router>
+      <Routes>
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+        <Route path="/*" element={<AppLayout />} />
+      </Routes>
+    </Router>
+  );
+}
+
+export default App;
