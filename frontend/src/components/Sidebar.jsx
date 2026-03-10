@@ -40,6 +40,15 @@ function Sidebar({ isOpen, closeSidebar }) {
                         <span>Audit Logs</span>
                     </NavLink>
                 )}
+                {user?.role === 'Admin' && (
+                    <NavLink
+                        to="/approvals"
+                        className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
+                    >
+                        <i>✅</i>
+                        <span>User Approvals</span>
+                    </NavLink>
+                )}
             </nav>
 
             <div style={{ marginTop: 'auto', padding: '16px 0', borderTop: '1px solid rgba(255,255,255,0.1)' }}>

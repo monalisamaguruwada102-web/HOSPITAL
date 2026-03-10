@@ -28,9 +28,14 @@ const authenticate = (req, res, next) => {
 // ─── Auth API ─────────────────────────────────────────────────────────────────
 app.post('/api/auth/login', (req, res) => {
     const { username, password } = req.body;
-    db.get('SELECT id, name, role, username, branch_id FROM Users WHERE username = ? AND password = ?', [username, password], (err, user) => {
+    db.get('SELECT id, name, role, username, branch_id, approval_status FROM Users WHERE username = ? AND password = ?', [username, password], (err, user) => {
         if (err) return res.status(500).json({ error: err.message });
         if (!user) return res.status(401).json({ error: 'Invalid credentials' });
+        
+        if (user.approval_status !== 'Approved') {
+            return res.status(403).json({ error: 'Your account is pending administrator approval. Please contact your branch administrator.' });
+        }
+
         const token = jwt.sign({ id: user.id, role: user.role, name: user.name, branch_id: user.branch_id }, JWT_SECRET, { expiresIn: '8h' });
         res.json({ token, user });
     });
@@ -43,7 +48,7 @@ app.post('/api/auth/register', (req, res) => {
     }
     
     db.run(
-        `INSERT INTO Users (name, role, username, password, branch_id) VALUES (?, ?, ?, ?, ?)`,
+        `INSERT INTO Users (name, role, username, password, branch_id, approval_status) VALUES (?, ?, ?, ?, ?, 'Pending')`,
         [name, role, username, password, branch_id || 1],
         function (err) {
             if (err) {
@@ -52,9 +57,28 @@ app.post('/api/auth/register', (req, res) => {
                 }
                 return res.status(500).json({ error: err.message });
             }
-            res.json({ success: true, id: this.lastID, message: 'Registration successful. You can now log in.' });
+            res.json({ success: true, id: this.lastID, message: 'Registration submitted. Please wait for administrator approval before logging in.' });
         }
     );
+});
+
+// User Approval Management (Admin Only)
+app.get('/api/admin/pending-users', authenticate, requireRole(['Admin']), (req, res) => {
+    db.all("SELECT id, name, role, username, created_at, branch_id FROM Users WHERE approval_status = 'Pending'", (err, rows) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json(rows);
+    });
+});
+
+app.put('/api/admin/approve-user/:id', authenticate, requireRole(['Admin']), (req, res) => {
+    const { status } = req.body; // 'Approved' or 'Rejected'
+    if (!['Approved', 'Rejected'].includes(status)) {
+        return res.status(400).json({ error: 'Invalid status' });
+    }
+    db.run("UPDATE Users SET approval_status = ? WHERE id = ?", [status, req.params.id], function(err) {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ success: true, message: `User ${status.toLowerCase()} successfully` });
+    });
 });
 
 

@@ -4,7 +4,8 @@ CREATE TABLE IF NOT EXISTS Users (
     name TEXT NOT NULL,
     role TEXT NOT NULL,
     username TEXT UNIQUE NOT NULL,
-    password TEXT NOT NULL
+    password TEXT NOT NULL,
+    approval_status TEXT DEFAULT 'Pending'
 );
 
 CREATE TABLE IF NOT EXISTS Patients (

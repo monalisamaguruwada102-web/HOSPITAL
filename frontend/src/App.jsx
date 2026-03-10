@@ -12,6 +12,7 @@ import Laboratory from './pages/Laboratory';
 import Pharmacy from './pages/Pharmacy';
 import Billing from './pages/Billing';
 import SystemLogs from './pages/SystemLogs';
+import UserApprovals from './pages/UserApprovals';
 
 import { Navigate } from 'react-router-dom';
 import Login from './pages/Login';
@@ -43,6 +44,7 @@ function AppLayout() {
             <Route path="/pharmacy" element={<ProtectedRoute><Pharmacy /></ProtectedRoute>} />
             <Route path="/billing" element={<ProtectedRoute><Billing /></ProtectedRoute>} />
             <Route path="/system-logs" element={<ProtectedRoute><SystemLogs /></ProtectedRoute>} />
+            <Route path="/approvals" element={<ProtectedRoute><UserApprovals /></ProtectedRoute>} />
           </Routes>
         </div>
       </div>
