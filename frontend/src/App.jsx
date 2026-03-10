@@ -19,7 +19,7 @@ import Register from './pages/Register';
 
 // Protected Route Wrapper
 const ProtectedRoute = ({ children }) => {
-  const token = localStorage.getItem('ihms_token');
+  const token = localStorage.getItem('token');
   if (!token) {
     return <Navigate to="/login" replace />;
   }

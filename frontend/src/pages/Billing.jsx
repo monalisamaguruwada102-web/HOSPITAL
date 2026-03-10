@@ -12,16 +12,24 @@ function Billing() {
         status: 'Paid'
     });
 
+    const getAuthHeaders = () => {
+        const token = localStorage.getItem('token');
+        return {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+        };
+    };
+
     const fetchData = async () => {
         try {
             const [billRes, patRes] = await Promise.all([
-                fetch('/api/billing'),
-                fetch('/api/patients')
+                fetch('/api/billing', { headers: getAuthHeaders() }),
+                fetch('/api/patients', { headers: getAuthHeaders() })
             ]);
             const billData = await billRes.json();
             const patData = await patRes.json();
-            setBills(billData);
-            setPatients(patData);
+            setBills(Array.isArray(billData) ? billData : []);
+            setPatients(Array.isArray(patData) ? patData : []);
         } catch (err) {
             console.error('Failed to fetch data data', err);
         }
@@ -36,7 +44,7 @@ function Billing() {
         try {
             const res = await fetch('/api/billing', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: getAuthHeaders(),
                 body: JSON.stringify({ ...formData, amount: parseFloat(formData.amount) })
             });
             if (res.ok) {
@@ -53,7 +61,7 @@ function Billing() {
         try {
             const res = await fetch(`/api/billing/${id}/status`, {
                 method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
+                headers: getAuthHeaders(),
                 body: JSON.stringify({ status })
             });
             if (res.ok) {

@@ -10,10 +10,10 @@ function SystemLogs() {
         const fetchLogs = async () => {
             try {
                 const res = await fetch('/api/audit-logs', {
-                    headers: { 'Authorization': `Bearer ${localStorage.getItem('ihms_token')}` }
+                    headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
                 });
                 const data = await res.json();
-                if (Array.isArray(data)) setLogs(data);
+                setLogs(Array.isArray(data) ? data : []);
             } catch (err) {
                 console.error('Failed to fetch logs', err);
             }

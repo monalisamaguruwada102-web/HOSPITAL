@@ -9,38 +9,55 @@ function Dashboard() {
     });
     const [recentAppointments, setRecentAppointments] = useState([]);
 
+    const getAuthHeaders = () => {
+        const token = localStorage.getItem('token');
+        return {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+        };
+    };
+
     useEffect(() => {
         // Fetch real data to calculate stats and list recent appointments
         const fetchDashboardData = async () => {
             try {
                 const [patRes, labRes, pharmRes, billRes, apptRes] = await Promise.all([
-                    fetch('/api/patients'),
-                    fetch('/api/lab'),
-                    fetch('/api/pharmacy'),
-                    fetch('/api/billing'),
-                    fetch('/api/appointments')
+                    fetch('/api/patients', { headers: getAuthHeaders() }),
+                    fetch('/api/lab', { headers: getAuthHeaders() }),
+                    fetch('/api/pharmacy', { headers: getAuthHeaders() }),
+                    fetch('/api/billing', { headers: getAuthHeaders() }),
+                    fetch('/api/appointments', { headers: getAuthHeaders() })
                 ]);
 
-                const patients = await patRes.json();
-                const labs = await labRes.json();
-                const pharmacy = await pharmRes.json();
-                const bills = await billRes.json();
-                const appointments = await apptRes.json();
+                const [pats, labs, pharmacy, bills, appointments] = await Promise.all([
+                    patRes.json().catch(() => []),
+                    labRes.json().catch(() => []),
+                    pharmRes.json().catch(() => []),
+                    billRes.json().catch(() => []),
+                    apptRes.json().catch(() => [])
+                ]);
+                
+                // Be extra defensive
+                const safePats = Array.isArray(pats) ? pats : [];
+                const safeLabs = Array.isArray(labs) ? labs : [];
+                const safePharm = Array.isArray(pharmacy) ? pharmacy : [];
+                const safeBills = Array.isArray(bills) ? bills : [];
+                const safeAppts = Array.isArray(appointments) ? appointments : [];
 
                 // Calculate basic stats
-                const pendingLabsCount = labs.filter(l => l.status !== 'Completed').length;
-                const lowStockCount = pharmacy.filter(p => p.quantity <= p.low_stock_threshold).length;
-                const todayIncomeCount = bills.reduce((sum, b) => sum + (b.amount || 0), 0);
+                const pendingLabsCount = safeLabs.filter(l => l.status !== 'Completed').length;
+                const lowStockCount = safePharm.filter(p => p.quantity <= p.low_stock_threshold).length;
+                const todayIncomeCount = safeBills.reduce((sum, b) => sum + (b.amount || 0), 0);
 
                 setStats({
-                    totalPatients: patients.length,
+                    totalPatients: safePats.length,
                     pendingLabs: pendingLabsCount,
                     lowStock: lowStockCount,
                     todayIncome: todayIncomeCount
                 });
 
                 // Get top 5 most recent appointments
-                const recent = appointments.slice(0, 5);
+                const recent = safeAppts.slice(0, 5);
                 setRecentAppointments(recent);
 
             } catch (err) {

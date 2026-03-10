@@ -13,7 +13,7 @@ export const AuthProvider = ({ children }) => {
     }, []);
 
     const logout = () => {
-        localStorage.removeItem('ihms_token');
+        localStorage.removeItem('token');
         localStorage.removeItem('ihms_user');
         setUser(null);
         window.location.href = '/login';

@@ -23,7 +23,7 @@ function Patients() {
     const getAuthHeaders = () => {
         return {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${localStorage.getItem('ihms_token')}`
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
         };
     };
 

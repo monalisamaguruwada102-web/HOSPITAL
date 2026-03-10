@@ -27,7 +27,7 @@ function Login() {
             }
 
             // Save token and user info
-            localStorage.setItem('ihms_token', data.token);
+            localStorage.setItem('token', data.token);
             localStorage.setItem('ihms_user', JSON.stringify(data.user));
 
             navigate('/');

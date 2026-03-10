@@ -15,6 +15,14 @@ function Laboratory() {
         notes: ''
     });
 
+    const getAuthHeaders = () => {
+        const token = localStorage.getItem('token');
+        return {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+        };
+    };
+
     const fetchLabTests = async () => {
         try {
             let url = '/api/lab';
@@ -23,9 +31,9 @@ function Laboratory() {
             if (filter !== 'All') params.append('status', filter);
             if (params.toString()) url += `?${params.toString()}`;
 
-            const res = await fetch(url);
+            const res = await fetch(url, { headers: getAuthHeaders() });
             const data = await res.json();
-            setLabTests(data);
+            setLabTests(Array.isArray(data) ? data : []);
         } catch (err) {
             console.error('Failed to fetch lab tests', err);
         }
@@ -33,8 +41,9 @@ function Laboratory() {
 
     const fetchPatients = async () => {
         try {
-            const res = await fetch('/api/patients');
-            setPatients(await res.json());
+            const res = await fetch('/api/patients', { headers: getAuthHeaders() });
+            const data = await res.json();
+            setPatients(Array.isArray(data) ? data : []);
         } catch(err) {}
     };
 
@@ -52,7 +61,7 @@ function Laboratory() {
         try {
             const res = await fetch('/api/lab', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: getAuthHeaders(),
                 body: JSON.stringify({ ...formData, doctor_id: user.id })
             });
             if (res.ok) {
@@ -72,7 +81,7 @@ function Laboratory() {
         try {
             const res = await fetch(`/api/lab/${id}/result`, {
                 method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
+                headers: getAuthHeaders(),
                 body: JSON.stringify({ results: resultText })
             });
             if (res.ok) {
