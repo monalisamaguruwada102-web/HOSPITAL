@@ -339,7 +339,7 @@ app.put('/api/lab/:id/result', requireRole(['Lab Technician', 'Doctor', 'Admin']
 });
 
 // Update lab test status
-app.put('/api/lab/:id/status', (req, res) => {
+app.put('/api/lab/:id/status', requireRole(['Lab Technician', 'Doctor', 'Admin']), (req, res) => {
     const { status } = req.body;
     db.run('UPDATE LabTests SET status = ? WHERE id = ?', [status, req.params.id], function (err) {
         if (err) return res.status(500).json({ error: err.message });
@@ -506,7 +506,7 @@ app.get('/api/billing', (req, res) => {
     });
 });
 
-app.post('/api/billing', (req, res) => {
+app.post('/api/billing', requireRole(['Receptionist', 'Admin']), (req, res) => {
     const { patient_id, description, amount, status } = req.body;
     db.run(
         `INSERT INTO Billing (patient_id, description, amount, status) VALUES (?, ?, ?, ?)`,
@@ -518,7 +518,7 @@ app.post('/api/billing', (req, res) => {
     );
 });
 
-app.put('/api/billing/:id/status', (req, res) => {
+app.put('/api/billing/:id/status', requireRole(['Receptionist', 'Admin']), (req, res) => {
     const { status } = req.body;
     db.run('UPDATE Billing SET status = ? WHERE id = ?', [status, req.params.id], function (err) {
         if (err) return res.status(500).json({ error: err.message });

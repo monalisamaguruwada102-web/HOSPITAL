@@ -76,13 +76,72 @@ function Billing() {
     const totalRevenue = bills.filter(b => b.status === 'Paid').reduce((sum, b) => sum + (b.amount || 0), 0);
     const pendingFees = bills.filter(b => b.status === 'Pending').reduce((sum, b) => sum + (b.amount || 0), 0);
 
+    const printReceipt = (bill) => {
+        const printWindow = window.open('', '_blank');
+        const html = `
+            <html>
+                <head>
+                    <title>Invoice - ${bill.id}</title>
+                    <style>
+                        body { font-family: sans-serif; padding: 40px; }
+                        .header { text-align: center; margin-bottom: 40px; }
+                        .details { margin-bottom: 20px; }
+                        .table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+                        .table th, .table td { border-bottom: 1px solid #ddd; padding: 12px; text-align: left; }
+                        .footer { margin-top: 50px; text-align: center; font-size: 12px; color: #666; }
+                    </style>
+                </head>
+                <body>
+                    <div class="header">
+                        <h2>IHMS PREMIUM</h2>
+                        <p>Hospital Management System - Official Receipt</p>
+                    </div>
+                    <div class="details">
+                        <p><strong>Invoice ID:</strong> INV-${String(bill.id).padStart(5, '0')}</p>
+                        <p><strong>Date:</strong> ${new Date(bill.created_at + 'Z').toLocaleString()}</p>
+                        <p><strong>Patient:</strong> ${bill.first_name} ${bill.last_name}</p>
+                    </div>
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Description</th>
+                                <th>Amount</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>${bill.description || 'Medical Service'}</td>
+                                <td>$${bill.amount?.toFixed(2)}</td>
+                            </tr>
+                        </tbody>
+                        <tfoot>
+                            <tr>
+                                <th style="text-align: right;">Total Paid:</th>
+                                <th>$${bill.amount?.toFixed(2)}</th>
+                            </tr>
+                        </tfoot>
+                    </table>
+                    <div class="footer">
+                        <p>Thank you for choosing IHMS. This is a computer-generated receipt.</p>
+                        <p>Printed by: ${user.name} (${user.role})</p>
+                    </div>
+                    <script>window.print(); setTimeout(() => window.close(), 500);</script>
+                </body>
+            </html>
+        `;
+        printWindow.document.write(html);
+        printWindow.document.close();
+    };
+
     return (
         <div>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '24px' }}>
                 <h3 style={{ fontSize: '18px', fontWeight: '500' }}>Billing & Payments</h3>
-                <button className="btn btn-primary" style={{ background: 'var(--accent-success)' }} onClick={() => setShowForm(!showForm)}>
-                    <i>💵</i> {showForm ? 'Cancel Payment' : 'Record New Payment'}
-                </button>
+                {['Receptionist', 'Admin'].includes(user?.role) && (
+                    <button className="btn btn-primary" style={{ background: 'var(--accent-success)' }} onClick={() => setShowForm(!showForm)}>
+                        <i>💵</i> {showForm ? 'Cancel Payment' : 'Record New Payment'}
+                    </button>
+                )}
             </div>
 
             <div className="dashboard-grid">
@@ -165,9 +224,17 @@ function Billing() {
                                     </td>
                                     <td>
                                         {bill.status === 'Paid' ? (
-                                            <button className="btn btn-secondary" style={{ padding: '4px 8px', fontSize: '12px' }}>Print Receipt</button>
+                                            ['Receptionist', 'Admin'].includes(user?.role) ? (
+                                                <button className="btn btn-secondary" style={{ padding: '4px 8px', fontSize: '12px' }} onClick={() => printReceipt(bill)}>Print Receipt</button>
+                                            ) : (
+                                                <span className="badge badge-info">Receipt Processed</span>
+                                            )
                                         ) : (
-                                            <button className="btn btn-primary" style={{ padding: '4px 8px', fontSize: '12px' }} onClick={() => updateStatus(bill.id, 'Paid')}>Process Payment</button>
+                                            ['Receptionist', 'Admin'].includes(user?.role) ? (
+                                                <button className="btn btn-primary" style={{ padding: '4px 8px', fontSize: '12px' }} onClick={() => updateStatus(bill.id, 'Paid')}>Process Payment</button>
+                                            ) : (
+                                                <span className="badge badge-warning">Awaiting Payment</span>
+                                            )
                                         )}
                                     </td>
                                 </tr>
