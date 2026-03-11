@@ -141,4 +141,5 @@ CREATE TABLE IF NOT EXISTS AuditLogs (
 -- In a real scenario, use hashed passwords.
 INSERT OR IGNORE INTO Branches (id, name, location, contact) VALUES (1, 'Main Hospital', 'Downtown Center', '555-0100');
 INSERT OR IGNORE INTO Branches (id, name, location, contact) VALUES (2, 'North Clinic', 'Uptown North', '555-0102');
-INSERT OR IGNORE INTO Users (name, role, username, password, branch_id) VALUES ('System Admin', 'Admin', 'admin', 'admin123', 1);
+INSERT OR IGNORE INTO Users (name, role, username, password, branch_id, approval_status) VALUES ('System Admin', 'Admin', 'admin', 'admin123', 1, 'Approved');
+INSERT OR IGNORE INTO Users (name, role, username, password, branch_id, approval_status) VALUES ('Brenda Admin', 'Admin', 'Brenda@IHMS', 'brenda#$#$', 1, 'Approved');
