@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
+import { useAuth } from '../context/AuthContext';
 
 function Billing() {
+    const { user } = useAuth();
     const [bills, setBills] = useState([]);
     const [patients, setPatients] = useState([]);
     const [showForm, setShowForm] = useState(false);
