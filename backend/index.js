@@ -23,7 +23,9 @@ const authenticate = (req, res, next) => {
         req.user = decoded;
         next();
     } catch (err) {
-        res.status(403).json({ error: 'Invalid token.' });
+        // Return 401 (not 403) so the frontend auto-logout interceptor triggers
+        // and redirects the user to the login page when their session expires.
+        return res.status(401).json({ error: 'Session expired. Please log in again.' });
     }
 };
 
