@@ -91,10 +91,10 @@ app.get('/api/public/stats', (req, res) => {
     })))
     .then(([patients, doctors, branches, appointments]) => {
         res.json({
-            patients: parseInt(patients) + 1200, // Add base number for "Premium" feel
-            doctors: parseInt(doctors) + 45,
+            patients: parseInt(patients),
+            doctors: parseInt(doctors),
             branches: parseInt(branches),
-            appointments: parseInt(appointments) + 5400
+            appointments: parseInt(appointments)
         });
     })
     .catch(err => res.status(500).json({ error: err.message }));
