@@ -36,6 +36,45 @@ const requireRole = (roles) => {
     };
 };
 
+// Global Audit Logging Middleware
+const auditLogger = (req, res, next) => {
+    // Only log POST, PUT, DELETE
+    if (['POST', 'PUT', 'DELETE'].includes(req.method) && req.user) {
+        const originalSend = res.send;
+        res.send = function (data) {
+            res.send = originalSend;
+            if (res.statusCode >= 200 && res.statusCode < 300) {
+                const targetTable = req.path.split('/')[2] || 'System';
+                let recordId = req.params.id || null;
+                if (!recordId && data) {
+                    try {
+                        const parsed = JSON.parse(data);
+                        recordId = parsed.id || null;
+                    } catch (e) {}
+                }
+                const action = req.method;
+                const details = JSON.stringify(req.body);
+                const ip = req.ip || req.connection.remoteAddress;
+
+                db.run(
+                    `INSERT INTO AuditLogs (user_id, username, action, target_table, record_id, details, ip_address) 
+                     VALUES (?, ?, ?, ?, ?, ?, ?)`,
+                    [req.user.id, req.user.name, action, targetTable, recordId, details, ip],
+                    (err) => { if (err) console.error("Audit log error:", err.message); }
+                );
+            }
+            return res.send(...arguments);
+        };
+    }
+    next();
+};
+
+app.use('/api', (req, res, next) => {
+    // Exclude basic auth endpoints and version check from global authentication
+    if (req.path === '/auth/login' || req.path === '/auth/register' || req.path === '/version') return next();
+    authenticate(req, res, next);
+}, auditLogger);
+
 // ─── Auth API ─────────────────────────────────────────────────────────────────
 app.post('/api/auth/login', (req, res) => {
     const { username, password } = req.body;
@@ -76,14 +115,14 @@ app.post('/api/auth/register', (req, res) => {
 app.get('/api/version', (req, res) => res.json({ version: 'v2-finalized' }));
 
 // User Approval Management (Admin Only)
-app.get('/api/admin/pending-staff-requests', authenticate, requireRole(['Admin']), (req, res) => {
+app.get('/api/admin/pending-staff-requests', requireRole(['Admin']), (req, res) => {
     db.all("SELECT id, name, role, username, branch_id FROM Users WHERE approval_status = 'Pending'", (err, rows) => {
         if (err) return res.status(500).json({ error: err.message });
         res.json(rows);
     });
 });
 
-app.put('/api/admin/approve-user/:id', authenticate, requireRole(['Admin']), (req, res) => {
+app.put('/api/admin/approve-user/:id', requireRole(['Admin']), (req, res) => {
     const { status } = req.body; // 'Approved' or 'Rejected'
     if (!['Approved', 'Rejected'].includes(status)) {
         return res.status(400).json({ error: 'Invalid status' });
@@ -95,7 +134,7 @@ app.put('/api/admin/approve-user/:id', authenticate, requireRole(['Admin']), (re
 });
 
 // Admin: Get ALL users with roles (Staff Directory)
-app.get('/api/admin/all-users', authenticate, requireRole(['Admin']), (req, res) => {
+app.get('/api/admin/all-users', requireRole(['Admin']), (req, res) => {
     db.all("SELECT id, name, role, username, branch_id, approval_status FROM Users ORDER BY name ASC", (err, rows) => {
         if (err) return res.status(500).json({ error: err.message });
         res.json(rows);
@@ -128,44 +167,6 @@ app.post('/api/diseases', requireRole(['Lab Technician', 'Doctor', 'Admin']), (r
 });
 
 
-// ─── Auth API ─────────────────────────────────────────────────────────────────
-// Global Audit Logging Middleware
-const auditLogger = (req, res, next) => {
-    // Only log POST, PUT, DELETE
-    if (['POST', 'PUT', 'DELETE'].includes(req.method) && req.user) {
-        const originalSend = res.send;
-        res.send = function (data) {
-            res.send = originalSend;
-            if (res.statusCode >= 200 && res.statusCode < 300) {
-                const targetTable = req.path.split('/')[2] || 'System';
-                let recordId = req.params.id || null;
-                if (!recordId && data) {
-                    try {
-                        const parsed = JSON.parse(data);
-                        recordId = parsed.id || null;
-                    } catch (e) {}
-                }
-                const action = req.method;
-                const details = JSON.stringify(req.body);
-                const ip = req.ip || req.connection.remoteAddress;
-
-                db.run(
-                    `INSERT INTO AuditLogs (user_id, username, action, target_table, record_id, details, ip_address) 
-                     VALUES (?, ?, ?, ?, ?, ?, ?)`,
-                    [req.user.id, req.user.name, action, targetTable, recordId, details, ip],
-                    (err) => { if (err) console.error("Audit log error:", err.message); }
-                );
-            }
-            return res.send(...arguments);
-        };
-    }
-    next();
-};
-
-app.use('/api', (req, res, next) => {
-    if (req.path === '/auth/login' || req.path === '/auth/register') return next();
-    authenticate(req, res, next);
-}, auditLogger);
 
 // ─── Admin Audit API ──────────────────────────────────────────────────────────
 app.get('/api/audit-logs', requireRole(['Admin']), (req, res) => {
