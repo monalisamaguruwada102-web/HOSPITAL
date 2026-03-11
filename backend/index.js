@@ -73,8 +73,10 @@ app.post('/api/auth/register', (req, res) => {
     );
 });
 
+app.get('/api/version', (req, res) => res.json({ version: '5db-staff-fix-v1' }));
+
 // User Approval Management (Admin Only)
-app.get('/api/admin/pending-users', authenticate, requireRole(['Admin']), (req, res) => {
+app.get('/api/admin/pending-staff-requests', authenticate, requireRole(['Admin']), (req, res) => {
     db.all("SELECT id, name, role, username, branch_id FROM Users WHERE approval_status = 'Pending'", (err, rows) => {
         if (err) return res.status(500).json({ error: err.message });
         res.json(rows);

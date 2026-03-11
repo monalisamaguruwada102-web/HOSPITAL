@@ -15,7 +15,7 @@ function UserApprovals() {
 
     const fetchPendingUsers = async () => {
         try {
-            const res = await fetch('/api/admin/pending-users', { headers: getAuthHeaders() });
+            const res = await fetch('/api/admin/pending-staff-requests', { headers: getAuthHeaders() });
             const data = await res.json();
             setPendingUsers(Array.isArray(data) ? data : []);
         } catch (err) {
