@@ -75,7 +75,7 @@ app.post('/api/auth/register', (req, res) => {
 
 // User Approval Management (Admin Only)
 app.get('/api/admin/pending-users', authenticate, requireRole(['Admin']), (req, res) => {
-    db.all("SELECT id, name, role, username, created_at, branch_id FROM Users WHERE approval_status = 'Pending'", (err, rows) => {
+    db.all("SELECT id, name, role, username, branch_id FROM Users WHERE approval_status = 'Pending'", (err, rows) => {
         if (err) return res.status(500).json({ error: err.message });
         res.json(rows);
     });
@@ -92,16 +92,7 @@ app.put('/api/admin/approve-user/:id', authenticate, requireRole(['Admin']), (re
     });
 });
 
-app.get('/api/debug/db', (req, res) => {
-    db.all("PRAGMA table_info(Users)", (err, rows) => {
-        if (err) return res.status(500).json({ error: err.message });
-        res.json({
-            table: 'Users',
-            columns: rows,
-            dbPath: process.env.DB_PATH || 'backend/ihms.db'
-        });
-    });
-});
+
 
 
 
