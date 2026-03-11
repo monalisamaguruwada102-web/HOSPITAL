@@ -17,13 +17,14 @@ const db = new sqlite3.Database(dbPath, (err) => {
             
             db.serialize(() => {
                 // Aggressive Migrations: Just try to add columns and ignore "duplicate column" errors
+                // NOTE: SQLite requires constant defaults in ALTER TABLE, so use NULL not CURRENT_TIMESTAMP
                 db.run("ALTER TABLE Users ADD COLUMN approval_status TEXT DEFAULT 'Approved'", (err) => {
                     if (err && !err.message.includes('duplicate column name')) {
                         console.log("Migration Note (approval_status):", err.message);
                     }
                 });
 
-                db.run("ALTER TABLE Users ADD COLUMN created_at DATETIME DEFAULT CURRENT_TIMESTAMP", (err) => {
+                db.run("ALTER TABLE Users ADD COLUMN created_at DATETIME DEFAULT NULL", (err) => {
                     if (err && !err.message.includes('duplicate column name')) {
                         console.log("Migration Note (created_at):", err.message);
                     }
@@ -35,9 +36,12 @@ const db = new sqlite3.Database(dbPath, (err) => {
                         console.error('Error executing schema file: ' + err.message);
                     } else {
                         console.log('Database schema validated/initialized.');
-                        // Ensure Brenda exists
-                        db.run(`INSERT OR IGNORE INTO Users (name, role, username, password, branch_id, approval_status, created_at) 
-                                VALUES ('Brenda Admin', 'Admin', 'Brenda@IHMS', 'brenda#$#$', 1, 'Approved', CURRENT_TIMESTAMP)`);
+                        // Ensure Brenda exists - DO NOT reference created_at (may not exist on old DBs)
+                        db.run(`INSERT OR IGNORE INTO Users (name, role, username, password, branch_id, approval_status) 
+                                VALUES ('Brenda Admin', 'Admin', 'Brenda@IHMS', 'brenda#$#$', 1, 'Approved')`, (e) => {
+                            if (e) console.error("Brenda seed error:", e.message);
+                            else console.log("Admin user verified.");
+                        });
                     }
                 });
             });
