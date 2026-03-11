@@ -17,6 +17,9 @@ import UserApprovals from './pages/UserApprovals';
 import { Navigate } from 'react-router-dom';
 import Login from './pages/Login';
 import Register from './pages/Register';
+import RegisterPatient from './pages/RegisterPatient';
+import Portal from './pages/Portal';
+import PatientDashboard from './pages/PatientDashboard';
 
 // Protected Route Wrapper
 const ProtectedRoute = ({ children }) => {
@@ -37,7 +40,7 @@ function AppLayout() {
         <Header toggleSidebar={() => setSidebarOpen(!sidebarOpen)} />
         <div className="animate-fade-in">
           <Routes>
-            <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+            <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
             <Route path="/patients" element={<ProtectedRoute><Patients /></ProtectedRoute>} />
             <Route path="/appointments" element={<ProtectedRoute><Appointments /></ProtectedRoute>} />
             <Route path="/laboratory" element={<ProtectedRoute><Laboratory /></ProtectedRoute>} />
@@ -56,8 +59,11 @@ function App() {
   return (
     <Router>
       <Routes>
+        <Route path="/" element={<Portal />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/register-patient" element={<RegisterPatient />} />
+        <Route path="/patient-dashboard" element={<ProtectedRoute><PatientDashboard /></ProtectedRoute>} />
         <Route path="/*" element={<AppLayout />} />
       </Routes>
     </Router>

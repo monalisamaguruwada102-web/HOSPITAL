@@ -30,7 +30,11 @@ function Login() {
             localStorage.setItem('token', data.token);
             localStorage.setItem('ihms_user', JSON.stringify(data.user));
 
-            navigate('/');
+            if (data.user.role === 'Patient') {
+                navigate('/patient-dashboard');
+            } else {
+                navigate('/dashboard');
+            }
         } catch (err) {
             setError(err.message);
         } finally {
@@ -81,9 +85,15 @@ function Login() {
                 </form>
 
                 <div style={{ marginTop: '24px', textAlign: 'center', fontSize: '13px', color: 'var(--text-muted)' }}>
-                    <p>Demo Credentials: admin / admin123</p>
+                    <p>Demo Staff Credentials: admin / admin123</p>
                     <p style={{ marginTop: '8px', fontSize: '14px', color: 'var(--text-secondary)' }}>
                         New Staff Member? <Link to="/register" style={{ color: 'var(--accent-primary)', textDecoration: 'none' }}>Register here</Link>
+                    </p>
+                    <p style={{ marginTop: '8px', fontSize: '14px', color: 'var(--text-secondary)' }}>
+                        Patient? <Link to="/register-patient" style={{ color: 'var(--accent-secondary)', textDecoration: 'none' }}>Register or Login as Patient</Link>
+                    </p>
+                    <p style={{ marginTop: '8px', fontSize: '13px', color: 'var(--text-muted)' }}>
+                        <Link to="/" style={{ color: 'var(--text-muted)', textDecoration: 'none' }}>← Back to Public Portal</Link>
                     </p>
                 </div>
             </div>

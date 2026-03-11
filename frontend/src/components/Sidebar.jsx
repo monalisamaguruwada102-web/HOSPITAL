@@ -4,9 +4,9 @@ import { useAuth } from '../context/AuthContext';
 function Sidebar({ isOpen, closeSidebar }) {
     const { user, logout } = useAuth();
     const menuItems = [
-        { path: '/', icon: '📊', label: 'Dashboard', roles: ['Admin', 'Doctor', 'Nurse', 'Receptionist', 'Pharmacist', 'Lab Technician'] },
+        { path: '/dashboard', icon: '📊', label: 'Dashboard', roles: ['Admin', 'Doctor', 'Nurse', 'Receptionist', 'Pharmacist', 'Lab Technician'] },
         { path: '/patients', icon: '👥', label: 'Patients', roles: ['Admin', 'Doctor', 'Nurse', 'Receptionist', 'Pharmacist', 'Lab Technician'] },
-        { path: '/appointments', icon: '📅', label: 'Appointments', roles: ['Admin', 'Doctor', 'Nurse', 'Receptionist'] },
+        { path: '/appointments', icon: '📅', label: 'Appointments', roles: ['Admin', 'Doctor', 'Nurse', 'Receptionist', 'Patient'] },
         { path: '/laboratory', icon: '🔬', label: 'Laboratory', roles: ['Admin', 'Doctor', 'Lab Technician'] },
         { path: '/pharmacy', icon: '💊', label: 'Pharmacy', roles: ['Admin', 'Doctor', 'Pharmacist'] },
         { path: '/billing', icon: '💳', label: 'Billing', roles: ['Admin', 'Receptionist', 'Doctor'] },

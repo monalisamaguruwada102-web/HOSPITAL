@@ -100,17 +100,35 @@ app.post('/api/auth/register', (req, res) => {
         return res.status(400).json({ error: 'All fields are required' });
     }
     
+    const status = role === 'Patient' ? 'Approved' : 'Pending';
+
     db.run(
-        `INSERT INTO Users (name, role, username, password, branch_id, approval_status) VALUES (?, ?, ?, ?, ?, 'Pending')`,
-        [name, role, username, password, branch_id || 1],
+        `INSERT INTO Users (name, role, username, password, branch_id, approval_status) VALUES (?, ?, ?, ?, ?, ?)`,
+        [name, role, username, password, branch_id || 1, status],
         function (err) {
             if (err) {
-                if (err.message.includes('UNIQUE constraint failed')) {
+                if (err.message.includes('UNIQUE constraint failed') || err.message.includes('unique constraint')) {
                     return res.status(400).json({ error: 'Username already exists' });
                 }
                 return res.status(500).json({ error: err.message });
             }
-            res.json({ success: true, id: this.lastID, message: 'Registration submitted. Please wait for administrator approval before logging in.' });
+            const newUserId = this.lastID;
+            
+            if (role === 'Patient') {
+                // Auto-create a patient record
+                const names = name.split(' ');
+                const firstName = names[0];
+                const lastName = names.slice(1).join(' ') || 'User';
+                db.run(
+                    `INSERT INTO Patients (first_name, last_name, branch_id, user_id) VALUES (?, ?, ?, ?)`,
+                    [firstName, lastName, branch_id || 1, newUserId],
+                    function(err2) {
+                        res.json({ success: true, id: newUserId, message: 'Patient account created successfully. You can now log in.' });
+                    }
+                );
+            } else {
+                res.json({ success: true, id: newUserId, message: 'Registration submitted. Please wait for administrator approval before logging in.' });
+            }
         }
     );
 });
@@ -270,7 +288,10 @@ app.get('/api/appointments', (req, res) => {
         WHERE 1=1 `;
     const params = [];
     
-    if (req.user.role !== 'Admin') {
+    if (req.user.role === 'Patient') {
+        query += ' AND p.user_id = ?';
+        params.push(req.user.id);
+    } else if (req.user.role !== 'Admin') {
         query += ' AND a.branch_id = ?';
         params.push(req.user.branch_id);
     }
@@ -287,20 +308,32 @@ app.get('/api/appointments', (req, res) => {
     });
 });
 
-app.post('/api/appointments', requireRole(['Admin', 'Receptionist']), (req, res) => {
-    const { patient_id, doctor_id, appointment_date, notes } = req.body;
-    db.get('SELECT COUNT(*) as count FROM Appointments WHERE date(appointment_date) = date(?)', [appointment_date], (err, row) => {
-        const queue_number = (row ? row.count : 0) + 1;
-        db.run(
-            `INSERT INTO Appointments (patient_id, doctor_id, appointment_date, queue_number, status, notes, branch_id) 
-             VALUES (?, ?, ?, ?, 'Pending', ?, ?)`,
-            [patient_id, doctor_id, appointment_date, queue_number, notes || '', req.user.branch_id || 1],
-            function (err) {
-                if (err) return res.status(500).json({ error: err.message });
-                res.json({ id: this.lastID, queue_number });
-            }
-        );
-    });
+app.post('/api/appointments', requireRole(['Admin', 'Receptionist', 'Patient']), (req, res) => {
+    let { patient_id, doctor_id, appointment_date, notes } = req.body;
+    
+    if (req.user.role === 'Patient') {
+        db.get('SELECT id FROM Patients WHERE user_id = ?', [req.user.id], (err, patient) => {
+            if (err || !patient) return res.status(400).json({ error: 'Patient profile not found.' });
+            createAppointment(patient.id, doctor_id, appointment_date, notes, req.user.branch_id, res);
+        });
+    } else {
+        createAppointment(patient_id, doctor_id, appointment_date, notes, req.user.branch_id || 1, res);
+    }
+
+    function createAppointment(p_id, d_id, a_date, p_notes, b_id, response) {
+        db.get('SELECT COUNT(*) as count FROM Appointments WHERE date(appointment_date) = date(?)', [a_date], (err, row) => {
+            const queue_number = (row ? row.count : 0) + 1;
+            db.run(
+                `INSERT INTO Appointments (patient_id, doctor_id, appointment_date, queue_number, status, notes, branch_id) 
+                 VALUES (?, ?, ?, ?, 'Pending', ?, ?)`,
+                [p_id, d_id, a_date, queue_number, p_notes || '', b_id],
+                function (err) {
+                    if (err) return response.status(500).json({ error: err.message });
+                    response.json({ id: this.lastID, queue_number });
+                }
+            );
+        });
+    }
 });
 
 app.put('/api/appointments/:id/status', requireRole(['Admin', 'Receptionist', 'Doctor']), (req, res) => {
@@ -583,8 +616,12 @@ if (process.env.NODE_ENV === 'production') {
 
 // ─── App Entry Point ──────────────────────────────────────────────────────────
 dbReady.then(() => {
-    app.listen(PORT, () => {
-        console.log(`IHMS Server is running on port ${PORT} after DB migrations completed.`);
+    db.run("ALTER TABLE Patients ADD COLUMN IF NOT EXISTS user_id INTEGER", [], (err) => {
+        if (err) console.error("Could not add user_id column:", err.message);
+        
+        app.listen(PORT, () => {
+            console.log(`IHMS Server is running on port ${PORT} after DB migrations completed.`);
+        });
     });
 }).catch(err => {
     console.error("Failed to start server due to database error:", err);
