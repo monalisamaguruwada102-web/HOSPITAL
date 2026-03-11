@@ -494,9 +494,9 @@ app.put('/api/prescriptions/:id/dispense', requireRole(['Pharmacist', 'Admin']),
 app.get('/api/pharmacy', (req, res) => {
     // Phase 2: Pharmacy Inventory now aggregates DrugBatches to determine total quantity
     const query = req.user.role === 'Admin' 
-        ? `SELECT p.*, (p.quantity + COALESCE((SELECT SUM(quantity) FROM DrugBatches b WHERE b.drug_id = p.id), 0)) as total_quantity 
+        ? `SELECT p.*, (COALESCE(p.quantity, 0) + COALESCE((SELECT SUM(quantity)::int FROM DrugBatches b WHERE b.drug_id = p.id), 0))::int as total_quantity 
            FROM PharmacyInventory p ORDER BY p.drug_name ASC`
-        : `SELECT p.*, (p.quantity + COALESCE((SELECT SUM(quantity) FROM DrugBatches b WHERE b.drug_id = p.id), 0)) as total_quantity 
+        : `SELECT p.*, (COALESCE(p.quantity, 0) + COALESCE((SELECT SUM(quantity)::int FROM DrugBatches b WHERE b.drug_id = p.id), 0))::int as total_quantity 
            FROM PharmacyInventory p WHERE p.branch_id = $1 ORDER BY p.drug_name ASC`;
     const params = req.user.role === 'Admin' ? [] : [req.user.branch_id];
 
