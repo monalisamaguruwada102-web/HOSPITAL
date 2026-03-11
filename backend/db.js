@@ -31,6 +31,7 @@ const db = {
       callback = params;
       params = [];
     }
+    if (Array.isArray(params)) params = params.map(p => p === undefined ? null : p);
     const sql = translatePlaceholders(text);
     pool.query(sql, params, (err, result) => {
       if (err) return callback(err);
@@ -44,6 +45,7 @@ const db = {
       callback = params;
       params = [];
     }
+    if (Array.isArray(params)) params = params.map(p => p === undefined ? null : p);
     const sql = translatePlaceholders(text);
     pool.query(sql, params, (err, result) => {
       if (err) return callback(err);
@@ -58,6 +60,7 @@ const db = {
       callback = params;
       params = [];
     }
+    if (Array.isArray(params)) params = params.map(p => p === undefined ? null : p);
     let sql = text.trim();
     const isInsert = sql.toUpperCase().startsWith('INSERT');
     // Ensure INSERT statements return the generated id.
