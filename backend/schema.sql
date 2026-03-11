@@ -5,7 +5,8 @@ CREATE TABLE IF NOT EXISTS Users (
     role TEXT NOT NULL,
     username TEXT UNIQUE NOT NULL,
     password TEXT NOT NULL,
-    approval_status TEXT DEFAULT 'Pending'
+    approval_status TEXT DEFAULT 'Pending',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE IF NOT EXISTS Patients (

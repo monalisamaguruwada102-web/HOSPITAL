@@ -16,27 +16,34 @@ const db = new sqlite3.Database(dbPath, (err) => {
             const schema = fs.readFileSync(schemaPath, 'utf8');
             
             db.serialize(() => {
-                // Check if Users table exists and needs migration before running seeds in schema.sql
+                // Check for missing columns in Users
                 db.all("PRAGMA table_info(Users)", (err, columns) => {
                     if (!err && columns && columns.length > 0) {
                         const hasApprovalStatus = columns.some(c => c.name === 'approval_status');
+                        const hasCreatedAt = columns.some(c => c.name === 'created_at');
+
                         if (!hasApprovalStatus) {
-                            console.log("Migrating: Adding 'approval_status' column to Users table before schema execution.");
+                            console.log("Migrating: Adding 'approval_status' to Users.");
                             db.run("ALTER TABLE Users ADD COLUMN approval_status TEXT DEFAULT 'Approved'");
                         }
-                    }
-
-                    // Now execute the full schema (Creates tables if missing, runs seeds)
-                    db.exec(schema, (err) => {
-                        if (err) {
-                            console.error('Error executing schema file: ' + err.message);
-                        } else {
-                            console.log('Database schema validated/initialized.');
-                            // Ensure Brenda exists (redundant but safe)
-                            db.run(`INSERT OR IGNORE INTO Users (name, role, username, password, branch_id, approval_status) 
-                                    VALUES ('Brenda Admin', 'Admin', 'Brenda@IHMS', 'brenda#$#$', 1, 'Approved')`);
+                        if (!hasCreatedAt) {
+                            console.log("Migrating: Adding 'created_at' to Users.");
+                            db.run("ALTER TABLE Users ADD COLUMN created_at DATETIME DEFAULT CURRENT_TIMESTAMP");
                         }
-                    });
+                    }
+                });
+
+                // Now execute the full schema (Creates tables if missing, runs seeds)
+                // db.exec will run AFTER the above db.run/db.all because of db.serialize
+                db.exec(schema, (err) => {
+                    if (err) {
+                        console.error('Error executing schema file: ' + err.message);
+                    } else {
+                        console.log('Database schema validated/initialized.');
+                        // Final safety check for Brenda
+                        db.run(`INSERT OR IGNORE INTO Users (name, role, username, password, branch_id, approval_status) 
+                                VALUES ('Brenda Admin', 'Admin', 'Brenda@IHMS', 'brenda#$#$', 1, 'Approved')`);
+                    }
                 });
             });
         }
