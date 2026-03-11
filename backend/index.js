@@ -2,7 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const jwt = require('jsonwebtoken');
 const path = require('path');
-const db = require('./db');
+const { db, dbReady } = require('./db');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -582,6 +582,11 @@ if (process.env.NODE_ENV === 'production') {
 }
 
 // ─── App Entry Point ──────────────────────────────────────────────────────────
-app.listen(PORT, () => {
-    console.log(`IHMS Server is running on port ${PORT}`);
+dbReady.then(() => {
+    app.listen(PORT, () => {
+        console.log(`IHMS Server is running on port ${PORT} after DB migrations completed.`);
+    });
+}).catch(err => {
+    console.error("Failed to start server due to database error:", err);
+    process.exit(1);
 });
