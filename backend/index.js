@@ -73,7 +73,7 @@ app.post('/api/auth/register', (req, res) => {
     );
 });
 
-app.get('/api/version', (req, res) => res.json({ version: '5db-staff-fix-v1' }));
+app.get('/api/version', (req, res) => res.json({ version: 'v2-finalized' }));
 
 // User Approval Management (Admin Only)
 app.get('/api/admin/pending-staff-requests', authenticate, requireRole(['Admin']), (req, res) => {
@@ -94,8 +94,38 @@ app.put('/api/admin/approve-user/:id', authenticate, requireRole(['Admin']), (re
     });
 });
 
+// Admin: Get ALL users with roles (Staff Directory)
+app.get('/api/admin/all-users', authenticate, requireRole(['Admin']), (req, res) => {
+    db.all("SELECT id, name, role, username, branch_id, approval_status FROM Users ORDER BY name ASC", (err, rows) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json(rows);
+    });
+});
 
+// ─── Disease Registry API (Lab Tech Feature) ────────────────────────────────
+app.get('/api/diseases', (req, res) => {
+    db.all(`SELECT d.*, p.first_name, p.last_name, u.name as identified_by_name 
+            FROM DiseaseRegistry d 
+            LEFT JOIN Patients p ON d.patient_id = p.id 
+            LEFT JOIN Users u ON d.identified_by = u.id
+            ORDER BY d.identified_at DESC`, (err, rows) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json(rows);
+    });
+});
 
+app.post('/api/diseases', requireRole(['Lab Technician', 'Doctor', 'Admin']), (req, res) => {
+    const { disease_name, patient_id, severity, notes } = req.body;
+    if (!disease_name) return res.status(400).json({ error: 'Disease name is required' });
+    db.run(
+        `INSERT INTO DiseaseRegistry (disease_name, patient_id, identified_by, severity, notes) VALUES (?, ?, ?, ?, ?)`,
+        [disease_name, patient_id || null, req.user.id, severity || 'Moderate', notes || ''],
+        function(err) {
+            if (err) return res.status(500).json({ error: err.message });
+            res.json({ id: this.lastID, success: true });
+        }
+    );
+});
 
 
 // ─── Auth API ─────────────────────────────────────────────────────────────────

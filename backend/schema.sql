@@ -138,6 +138,18 @@ CREATE TABLE IF NOT EXISTS AuditLogs (
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE TABLE IF NOT EXISTS DiseaseRegistry (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    disease_name TEXT NOT NULL,
+    patient_id INTEGER,
+    identified_by INTEGER,
+    severity TEXT DEFAULT 'Moderate',
+    notes TEXT,
+    identified_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY(patient_id) REFERENCES Patients(id),
+    FOREIGN KEY(identified_by) REFERENCES Users(id)
+);
+
 -- Seed Initial Admin User (password: admin123)
 -- In a real scenario, use hashed passwords.
 INSERT OR IGNORE INTO Branches (id, name, location, contact) VALUES (1, 'Main Hospital', 'Downtown Center', '555-0100');
