@@ -12,6 +12,23 @@ export const AuthProvider = ({ children }) => {
         }
     }, []);
 
+    // Global 401 Interceptor: Automatically logout on session lapse
+    useEffect(() => {
+        const originalFetch = window.fetch;
+        window.fetch = async (...args) => {
+            const response = await originalFetch(...args);
+            // If the server returns 401 (Unauthorized), but we're not on the login page
+            if (response.status === 401 && !window.location.pathname.includes('/login')) {
+                localStorage.removeItem('token');
+                localStorage.removeItem('ihms_user');
+                setUser(null);
+                window.location.href = '/login';
+            }
+            return response;
+        };
+        return () => { window.fetch = originalFetch; };
+    }, []);
+
     const logout = () => {
         localStorage.removeItem('token');
         localStorage.removeItem('ihms_user');
