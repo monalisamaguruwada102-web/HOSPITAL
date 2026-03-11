@@ -92,6 +92,17 @@ app.put('/api/admin/approve-user/:id', authenticate, requireRole(['Admin']), (re
     });
 });
 
+app.get('/api/debug/db', (req, res) => {
+    db.all("PRAGMA table_info(Users)", (err, rows) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({
+            table: 'Users',
+            columns: rows,
+            dbPath: process.env.DB_PATH || 'backend/ihms.db'
+        });
+    });
+});
+
 
 
 // ─── Auth API ─────────────────────────────────────────────────────────────────
