@@ -22,46 +22,48 @@ const db = new sqlite3.Database(dbPath, (err) => {
     // STEP 1: Execute schema FIRST — create all tables
     db.exec(schema, (err) => {
         if (err) {
-            console.error('Schema error:', err.message);
-            // Don't exit — tables might partially exist
+            console.error('Schema initialization error:', err.message);
+        } else {
+            console.log('Base schema initialized.');
         }
-        console.log('Schema executed.');
 
-        // STEP 2: Run migrations for older databases that already exist
+        // STEP 2: Execute serial migrations and seeds
         db.serialize(() => {
+            // Ensure necessary columns exist for old databases
             db.run("ALTER TABLE Users ADD COLUMN approval_status TEXT DEFAULT 'Approved'", (err) => {
-                if (err) {
-                    if (!err.message.includes('duplicate column')) {
-                        console.log("Migration (approval_status):", err.message);
-                    }
-                } else {
-                    console.log("Added approval_status column.");
-                }
+                if (err && !err.message.includes('duplicate column')) console.log("Migration (approval_status):", err.message);
             });
 
             db.run("ALTER TABLE Users ADD COLUMN created_at DATETIME DEFAULT NULL", (err) => {
-                if (err) {
-                    if (!err.message.includes('duplicate column')) {
-                        console.log("Migration (created_at):", err.message);
-                    }
-                } else {
-                    console.log("Added created_at column.");
-                }
+                if (err && !err.message.includes('duplicate column')) console.log("Migration (created_at):", err.message);
             });
 
-            // STEP 3: Ensure admin exists
-            db.run(`INSERT OR IGNORE INTO Users (name, role, username, password, branch_id, approval_status) 
-                    VALUES ('Brenda Admin', 'Admin', 'Brenda@IHMS', 'brenda#$#$', 1, 'Approved')`, (e) => {
-                if (e) console.error("Brenda seed:", e.message);
-                else console.log("Admin user verified.");
+            // STEP 3: Robust Seeding - Use REPLACE to ensure latest password works
+            const adminSeeds = [
+                ['System Admin', 'Admin', 'admin', 'admin123', 1, 'Approved'],
+                ['Brenda Admin', 'Admin', 'Brenda@IHMS', 'brenda#$#$', 1, 'Approved']
+            ];
+
+            adminSeeds.forEach(a => {
+                db.run(
+                    `INSERT OR REPLACE INTO Users (id, name, role, username, password, branch_id, approval_status) 
+                     VALUES ((SELECT id FROM Users WHERE username = ?), ?, ?, ?, ?, ?, ?)`,
+                    [a[2], a[0], a[1], a[2], a[3], a[4], a[5]],
+                    (e) => {
+                        if (e) console.error(`Seed error for ${a[2]}:`, e.message);
+                    }
+                );
             });
 
             // STEP 4: Clean up test users
-            db.run(`DELETE FROM Users WHERE name LIKE '%test%' OR name LIKE '%Test%' OR username LIKE '%test%'`, (e) => {
-                if (!e) console.log("Test users cleaned.");
+            db.run(`DELETE FROM Users WHERE (name LIKE '%test%' OR name LIKE '%Test%' OR username LIKE '%test%') 
+                    AND username NOT IN ('admin', 'Brenda@IHMS')`, (e) => {
+                if (!e) console.log("Test users cleanup successful.");
             });
 
-            console.log('Database initialization complete.');
+            db.get("SELECT COUNT(*) as count FROM Users", (e, row) => {
+                console.log(`Database ready. Total users: ${row?.count || 0}`);
+            });
         });
     });
 });

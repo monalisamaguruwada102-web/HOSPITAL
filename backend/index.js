@@ -70,8 +70,9 @@ const auditLogger = (req, res, next) => {
 };
 
 app.use('/api', (req, res, next) => {
-    // Exclude basic auth endpoints and version check from global authentication
-    if (req.path === '/auth/login' || req.path === '/auth/register' || req.path === '/version') return next();
+    // Exclude basic auth endpoints and version check from global authentication (handle various path variations)
+    const isPublic = req.path.endsWith('/auth/login') || req.path.endsWith('/auth/register') || req.path.endsWith('/version');
+    if (isPublic) return next();
     authenticate(req, res, next);
 }, auditLogger);
 
