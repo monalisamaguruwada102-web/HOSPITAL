@@ -17,18 +17,25 @@ const db = new sqlite3.Database(dbPath, (err) => {
             
             // Check for missing columns in Users FIRST
             db.all("PRAGMA table_info(Users)", (err, columns) => {
+                if (err) return console.error("Could not check table info:", err.message);
+
                 db.serialize(() => {
-                    if (!err && columns && columns.length > 0) {
-                        const hasApprovalStatus = columns.some(c => c.name === 'approval_status');
-                        const hasCreatedAt = columns.some(c => c.name === 'created_at');
+                    if (columns && columns.length > 0) {
+                        const colNames = columns.map(c => c.name.toLowerCase());
+                        const hasApprovalStatus = colNames.includes('approval_status');
+                        const hasCreatedAt = colNames.includes('created_at');
 
                         if (!hasApprovalStatus) {
                             console.log("Migrating: Adding 'approval_status' to Users.");
-                            db.run("ALTER TABLE Users ADD COLUMN approval_status TEXT DEFAULT 'Approved'");
+                            db.run("ALTER TABLE Users ADD COLUMN approval_status TEXT DEFAULT 'Approved'", (e) => {
+                                if (e) console.error("Failed to add approval_status:", e.message);
+                            });
                         }
                         if (!hasCreatedAt) {
                             console.log("Migrating: Adding 'created_at' to Users.");
-                            db.run("ALTER TABLE Users ADD COLUMN created_at DATETIME DEFAULT CURRENT_TIMESTAMP");
+                            db.run("ALTER TABLE Users ADD COLUMN created_at DATETIME DEFAULT CURRENT_TIMESTAMP", (e) => {
+                                if (e) console.error("Failed to add created_at:", e.message);
+                            });
                         }
                     }
 
@@ -40,8 +47,10 @@ const db = new sqlite3.Database(dbPath, (err) => {
                         } else {
                             console.log('Database schema validated/initialized.');
                             // Final safety check for Brenda
-                            db.run(`INSERT OR IGNORE INTO Users (name, role, username, password, branch_id, approval_status) 
-                                    VALUES ('Brenda Admin', 'Admin', 'Brenda@IHMS', 'brenda#$#$', 1, 'Approved')`);
+                            db.run(`INSERT OR IGNORE INTO Users (name, role, username, password, branch_id, approval_status, created_at) 
+                                    VALUES ('Brenda Admin', 'Admin', 'Brenda@IHMS', 'brenda#$#$', 1, 'Approved', CURRENT_TIMESTAMP)`, (e) => {
+                                if (e) console.error("Failed to seed Brenda Admin:", e.message);
+                            });
                         }
                     });
                 });
