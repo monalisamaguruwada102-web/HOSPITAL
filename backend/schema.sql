@@ -1,16 +1,16 @@
 CREATE TABLE IF NOT EXISTS Users (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id SERIAL PRIMARY KEY,
     branch_id INTEGER DEFAULT 1,
     name TEXT NOT NULL,
     role TEXT NOT NULL,
     username TEXT UNIQUE NOT NULL,
     password TEXT NOT NULL,
     approval_status TEXT DEFAULT 'Pending',
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE IF NOT EXISTS Patients (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id SERIAL PRIMARY KEY,
     branch_id INTEGER DEFAULT 1,
     first_name TEXT NOT NULL,
     last_name TEXT NOT NULL,
@@ -19,15 +19,15 @@ CREATE TABLE IF NOT EXISTS Patients (
     contact_number TEXT,
     address TEXT,
     medical_history TEXT,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE IF NOT EXISTS Appointments (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id SERIAL PRIMARY KEY,
     branch_id INTEGER DEFAULT 1,
     patient_id INTEGER,
     doctor_id INTEGER,
-    appointment_date DATETIME,
+    appointment_date TIMESTAMP,
     status TEXT DEFAULT 'Scheduled',
     queue_number INTEGER,
     notes TEXT,
@@ -37,7 +37,7 @@ CREATE TABLE IF NOT EXISTS Appointments (
 );
 
 CREATE TABLE IF NOT EXISTS LabTests (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id SERIAL PRIMARY KEY,
     branch_id INTEGER DEFAULT 1,
     patient_id INTEGER,
     doctor_id INTEGER,
@@ -46,13 +46,13 @@ CREATE TABLE IF NOT EXISTS LabTests (
     notes TEXT,
     results TEXT,
     status TEXT DEFAULT 'Pending',
-    requested_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    requested_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY(patient_id) REFERENCES Patients(id),
     FOREIGN KEY(doctor_id) REFERENCES Users(id)
 );
 
 CREATE TABLE IF NOT EXISTS PharmacyInventory (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id SERIAL PRIMARY KEY,
     branch_id INTEGER DEFAULT 1,
     drug_name TEXT NOT NULL,
     quantity INTEGER DEFAULT 0,
@@ -60,48 +60,48 @@ CREATE TABLE IF NOT EXISTS PharmacyInventory (
 );
 
 CREATE TABLE IF NOT EXISTS IssuedMedication (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id SERIAL PRIMARY KEY,
     patient_id INTEGER,
     drug_id INTEGER,
     quantity INTEGER,
-    issued_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    issued_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     status TEXT DEFAULT 'Pending',
     FOREIGN KEY(patient_id) REFERENCES Patients(id),
     FOREIGN KEY(drug_id) REFERENCES PharmacyInventory(id)
 );
 
 CREATE TABLE IF NOT EXISTS Billing (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id SERIAL PRIMARY KEY,
     patient_id INTEGER,
     amount REAL,
     status TEXT DEFAULT 'Unpaid',
     description TEXT,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY(patient_id) REFERENCES Patients(id)
 );
 
 CREATE TABLE IF NOT EXISTS Vitals (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id SERIAL PRIMARY KEY,
     patient_id INTEGER,
     nurse_id INTEGER,
     blood_pressure TEXT,
     heart_rate INTEGER,
     temperature REAL,
     weight REAL,
-    recorded_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    recorded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY(patient_id) REFERENCES Patients(id),
     FOREIGN KEY(nurse_id) REFERENCES Users(id)
 );
 
 CREATE TABLE IF NOT EXISTS Prescriptions (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id SERIAL PRIMARY KEY,
     patient_id INTEGER,
     doctor_id INTEGER,
     appointment_id INTEGER,
     drug_id INTEGER,
     dosage TEXT NOT NULL,
     status TEXT DEFAULT 'Pending Dispense',
-    prescribed_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    prescribed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY(patient_id) REFERENCES Patients(id),
     FOREIGN KEY(doctor_id) REFERENCES Users(id),
     FOREIGN KEY(appointment_id) REFERENCES Appointments(id),
@@ -110,24 +110,24 @@ CREATE TABLE IF NOT EXISTS Prescriptions (
 
 -- Phase 2 New Tables
 CREATE TABLE IF NOT EXISTS Branches (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id SERIAL PRIMARY KEY,
     name TEXT NOT NULL,
     location TEXT NOT NULL,
     contact TEXT
 );
 
 CREATE TABLE IF NOT EXISTS DrugBatches (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id SERIAL PRIMARY KEY,
     drug_id INTEGER,
     batch_number TEXT NOT NULL,
     quantity INTEGER NOT NULL,
     expiry_date DATE NOT NULL,
-    received_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    received_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY(drug_id) REFERENCES PharmacyInventory(id)
 );
 
 CREATE TABLE IF NOT EXISTS AuditLogs (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id SERIAL PRIMARY KEY,
     user_id INTEGER,
     username TEXT,
     action TEXT NOT NULL,
@@ -135,24 +135,24 @@ CREATE TABLE IF NOT EXISTS AuditLogs (
     record_id INTEGER,
     details TEXT,
     ip_address TEXT,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE IF NOT EXISTS DiseaseRegistry (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id SERIAL PRIMARY KEY,
     disease_name TEXT NOT NULL,
     patient_id INTEGER,
     identified_by INTEGER,
     severity TEXT DEFAULT 'Moderate',
     notes TEXT,
-    identified_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    identified_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY(patient_id) REFERENCES Patients(id),
     FOREIGN KEY(identified_by) REFERENCES Users(id)
 );
 
 -- Seed Initial Admin User (password: admin123)
 -- In a real scenario, use hashed passwords.
-INSERT OR IGNORE INTO Branches (id, name, location, contact) VALUES (1, 'Main Hospital', 'Downtown Center', '555-0100');
-INSERT OR IGNORE INTO Branches (id, name, location, contact) VALUES (2, 'North Clinic', 'Uptown North', '555-0102');
-INSERT OR IGNORE INTO Users (name, role, username, password, branch_id, approval_status) VALUES ('System Admin', 'Admin', 'admin', 'admin123', 1, 'Approved');
-INSERT OR IGNORE INTO Users (name, role, username, password, branch_id, approval_status) VALUES ('Brenda Admin', 'Admin', 'Brenda@IHMS', 'brenda#$#$', 1, 'Approved');
+INSERT INTO Branches (id, name, location, contact) VALUES (1, 'Main Hospital', 'Downtown Center', '555-0100') ON CONFLICT (id) DO NOTHING;
+INSERT INTO Branches (id, name, location, contact) VALUES (2, 'North Clinic', 'Uptown North', '555-0102') ON CONFLICT (id) DO NOTHING;
+INSERT INTO Users (name, role, username, password, branch_id, approval_status) VALUES ('System Admin', 'Admin', 'admin', 'admin123', 1, 'Approved') ON CONFLICT (username) DO NOTHING;
+INSERT INTO Users (name, role, username, password, branch_id, approval_status) VALUES ('Brenda Admin', 'Admin', 'Brenda@IHMS', 'brenda#$#$', 1, 'Approved') ON CONFLICT (username) DO NOTHING;
