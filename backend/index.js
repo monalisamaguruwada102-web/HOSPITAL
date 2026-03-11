@@ -11,7 +11,8 @@ const JWT_SECRET = 'ihms_super_secret_key_2026'; // In production, move to .env
 app.use(cors());
 app.use(express.json());
 
-// ─── Auth Middleware ───────────────────────────────────────────────────────────
+// ─── Auth Middleware & Security Rules ──────────────────────────────────────────
+// Sync: Forced redeploy to resolve Render hoisting cache.
 // ─── Middleware ───────────────────────────────────────────────────────────────
 const authenticate = (req, res, next) => {
     const authHeader = req.headers['authorization'];
