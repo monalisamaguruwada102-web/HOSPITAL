@@ -30,12 +30,20 @@ const db = new sqlite3.Database(dbPath, (err) => {
         // STEP 2: Execute serial migrations and seeds
         db.serialize(() => {
             // Ensure necessary columns exist for old databases
-            db.run("ALTER TABLE Users ADD COLUMN approval_status TEXT DEFAULT 'Approved'", (err) => {
-                if (err && !err.message.includes('duplicate column')) console.log("Migration (approval_status):", err.message);
-            });
+            const alters = [
+                "ALTER TABLE Users ADD COLUMN approval_status TEXT DEFAULT 'Approved'",
+                "ALTER TABLE Users ADD COLUMN created_at DATETIME DEFAULT NULL",
+                "ALTER TABLE Users ADD COLUMN branch_id INTEGER DEFAULT 1",
+                "ALTER TABLE Patients ADD COLUMN branch_id INTEGER DEFAULT 1",
+                "ALTER TABLE Appointments ADD COLUMN branch_id INTEGER DEFAULT 1",
+                "ALTER TABLE LabTests ADD COLUMN branch_id INTEGER DEFAULT 1",
+                "ALTER TABLE PharmacyInventory ADD COLUMN branch_id INTEGER DEFAULT 1"
+            ];
 
-            db.run("ALTER TABLE Users ADD COLUMN created_at DATETIME DEFAULT NULL", (err) => {
-                if (err && !err.message.includes('duplicate column')) console.log("Migration (created_at):", err.message);
+            alters.forEach(sql => {
+                db.run(sql, (err) => {
+                    if (err && !err.message.includes('duplicate column')) console.log("Migration error:", err.message);
+                });
             });
 
             // STEP 3: Robust Seeding - Use REPLACE to ensure latest password works
