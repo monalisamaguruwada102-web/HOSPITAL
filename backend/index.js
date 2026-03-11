@@ -163,7 +163,7 @@ const auditLogger = (req, res, next) => {
 };
 
 app.use('/api', (req, res, next) => {
-    if (req.path === '/auth/login') return next();
+    if (req.path === '/auth/login' || req.path === '/auth/register') return next();
     authenticate(req, res, next);
 }, auditLogger);
 

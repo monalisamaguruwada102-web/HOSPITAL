@@ -8,41 +8,51 @@ const db = new sqlite3.Database(dbPath, (err) => {
     if (err) {
         console.error('Error opening database: ' + err.message);
     } else {
-        console.log('Connected to SQLite database.');
+        console.log('Connected to SQLite database at:', dbPath);
         
-        // Initialize Schema - Run Migrations FIRST
         const schemaPath = path.resolve(__dirname, 'schema.sql');
         if (fs.existsSync(schemaPath)) {
             const schema = fs.readFileSync(schemaPath, 'utf8');
             
             db.serialize(() => {
-                // Aggressive Migrations: Just try to add columns and ignore "duplicate column" errors
-                // NOTE: SQLite requires constant defaults in ALTER TABLE, so use NULL not CURRENT_TIMESTAMP
+                // Step 1: Try to add missing columns (ignore errors for existing columns or missing table)
                 db.run("ALTER TABLE Users ADD COLUMN approval_status TEXT DEFAULT 'Approved'", (err) => {
-                    if (err && !err.message.includes('duplicate column name')) {
+                    if (err && !err.message.includes('duplicate column')) {
                         console.log("Migration Note (approval_status):", err.message);
+                    } else if (!err) {
+                        console.log("Migration: Added approval_status column.");
                     }
                 });
 
                 db.run("ALTER TABLE Users ADD COLUMN created_at DATETIME DEFAULT NULL", (err) => {
-                    if (err && !err.message.includes('duplicate column name')) {
+                    if (err && !err.message.includes('duplicate column')) {
                         console.log("Migration Note (created_at):", err.message);
+                    } else if (!err) {
+                        console.log("Migration: Added created_at column.");
                     }
                 });
 
-                // Now execute the full schema (Creates tables if missing, runs seeds)
+                // Step 2: Execute full schema (creates tables if they don't exist, seeds data)
                 db.exec(schema, (err) => {
                     if (err) {
-                        console.error('Error executing schema file: ' + err.message);
+                        console.error('Schema execution error:', err.message);
+                        // Even if schema fails, try to continue - tables may already exist
                     } else {
                         console.log('Database schema validated/initialized.');
-                        // Ensure Brenda exists - DO NOT reference created_at (may not exist on old DBs)
-                        db.run(`INSERT OR IGNORE INTO Users (name, role, username, password, branch_id, approval_status) 
-                                VALUES ('Brenda Admin', 'Admin', 'Brenda@IHMS', 'brenda#$#$', 1, 'Approved')`, (e) => {
-                            if (e) console.error("Brenda seed error:", e.message);
-                            else console.log("Admin user verified.");
-                        });
                     }
+
+                    // Step 3: Ensure admin exists (safe - no created_at reference)
+                    db.run(`INSERT OR IGNORE INTO Users (name, role, username, password, branch_id, approval_status) 
+                            VALUES ('Brenda Admin', 'Admin', 'Brenda@IHMS', 'brenda#$#$', 1, 'Approved')`, (e) => {
+                        if (e) console.error("Brenda seed:", e.message);
+                        else console.log("Admin user verified.");
+                    });
+
+                    // Step 4: Clean up test staff
+                    db.run(`DELETE FROM Users WHERE username LIKE '%test%' OR username LIKE '%Test%'`, (e) => {
+                        if (e) console.log("Cleanup note:", e.message);
+                        else console.log("Test users cleaned up.");
+                    });
                 });
             });
         }
