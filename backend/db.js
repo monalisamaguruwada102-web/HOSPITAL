@@ -55,11 +55,6 @@ const db = new sqlite3.Database(dbPath, (err) => {
                 );
             });
 
-            // STEP 4: Clean up test users
-            db.run(`DELETE FROM Users WHERE (name LIKE '%test%' OR name LIKE '%Test%' OR username LIKE '%test%') 
-                    AND username NOT IN ('admin', 'Brenda@IHMS')`, (e) => {
-                if (!e) console.log("Test users cleanup successful.");
-            });
 
             db.get("SELECT COUNT(*) as count FROM Users", (e, row) => {
                 console.log(`Database ready. Total users: ${row?.count || 0}`);

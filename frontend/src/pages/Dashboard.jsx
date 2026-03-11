@@ -1,5 +1,25 @@
 import { useState, useEffect } from 'react';
 
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+// Fetch with a single retry after a delay (handles Render server cold-start)
+const fetchWithRetry = async (url, options, retries = 2, delayMs = 2000) => {
+    for (let i = 0; i < retries; i++) {
+        try {
+            const res = await fetch(url, options);
+            if (res.ok) return res;
+            // Non-network error (e.g. 401, 500) — don't retry
+            return res;
+        } catch (err) {
+            if (i < retries - 1) {
+                await sleep(delayMs);
+            } else {
+                throw err;
+            }
+        }
+    }
+};
+
 function Dashboard() {
     const [stats, setStats] = useState({
         totalPatients: 0,
@@ -8,6 +28,8 @@ function Dashboard() {
         todayIncome: 0
     });
     const [recentAppointments, setRecentAppointments] = useState([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [loadError, setLoadError] = useState(false);
 
     const getAuthHeaders = () => {
         const token = localStorage.getItem('token');
@@ -18,55 +40,97 @@ function Dashboard() {
     };
 
     useEffect(() => {
-        // Fetch real data to calculate stats and list recent appointments
         const fetchDashboardData = async () => {
+            setIsLoading(true);
+            setLoadError(false);
             try {
+                const headers = { headers: getAuthHeaders() };
+
                 const [patRes, labRes, pharmRes, billRes, apptRes] = await Promise.all([
-                    fetch('/api/patients', { headers: getAuthHeaders() }),
-                    fetch('/api/lab', { headers: getAuthHeaders() }),
-                    fetch('/api/pharmacy', { headers: getAuthHeaders() }),
-                    fetch('/api/billing', { headers: getAuthHeaders() }),
-                    fetch('/api/appointments', { headers: getAuthHeaders() })
+                    fetchWithRetry('/api/patients', headers),
+                    fetchWithRetry('/api/lab', headers),
+                    fetchWithRetry('/api/pharmacy', headers),
+                    fetchWithRetry('/api/billing', headers),
+                    fetchWithRetry('/api/appointments', headers)
                 ]);
 
+                const safeJson = async (res) => {
+                    if (!res) return [];
+                    try { return await res.json(); } catch { return []; }
+                };
+
                 const [pats, labs, pharmacy, bills, appointments] = await Promise.all([
-                    patRes.json().catch(() => []),
-                    labRes.json().catch(() => []),
-                    pharmRes.json().catch(() => []),
-                    billRes.json().catch(() => []),
-                    apptRes.json().catch(() => [])
+                    safeJson(patRes),
+                    safeJson(labRes),
+                    safeJson(pharmRes),
+                    safeJson(billRes),
+                    safeJson(apptRes)
                 ]);
-                
-                // Be extra defensive
+
                 const safePats = Array.isArray(pats) ? pats : [];
                 const safeLabs = Array.isArray(labs) ? labs : [];
                 const safePharm = Array.isArray(pharmacy) ? pharmacy : [];
                 const safeBills = Array.isArray(bills) ? bills : [];
                 const safeAppts = Array.isArray(appointments) ? appointments : [];
 
-                // Calculate basic stats
                 const pendingLabsCount = safeLabs.filter(l => l.status !== 'Completed').length;
-                const lowStockCount = safePharm.filter(p => p.quantity <= p.low_stock_threshold).length;
-                const todayIncomeCount = safeBills.reduce((sum, b) => sum + (b.amount || 0), 0);
+                // Use total_quantity (aggregated from DrugBatches) for accurate low-stock count
+                const lowStockCount = safePharm.filter(p => {
+                    const qty = p.total_quantity != null ? p.total_quantity : p.quantity;
+                    return (qty ?? 0) <= (p.low_stock_threshold ?? 10);
+                }).length;
+                const totalIncome = safeBills.reduce((sum, b) => sum + (b.amount || 0), 0);
 
                 setStats({
                     totalPatients: safePats.length,
                     pendingLabs: pendingLabsCount,
                     lowStock: lowStockCount,
-                    todayIncome: todayIncomeCount
+                    todayIncome: totalIncome
                 });
 
-                // Get top 5 most recent appointments
-                const recent = safeAppts.slice(0, 5);
-                setRecentAppointments(recent);
+                setRecentAppointments(safeAppts.slice(0, 5));
 
             } catch (err) {
-                console.error("Failed to load dashboard data");
+                console.error('Failed to load dashboard data', err);
+                setLoadError(true);
+            } finally {
+                setIsLoading(false);
             }
         };
 
         fetchDashboardData();
     }, []);
+
+    if (isLoading) {
+        return (
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '80px 20px', gap: '16px' }}>
+                <div style={{
+                    width: '48px', height: '48px', border: '4px solid rgba(59,130,246,0.2)',
+                    borderTopColor: 'var(--accent-primary)', borderRadius: '50%',
+                    animation: 'spin 0.9s linear infinite'
+                }} />
+                <p style={{ color: 'var(--text-muted)', fontSize: '14px' }}>Loading dashboard… (server may be waking up, please wait)</p>
+                <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+            </div>
+        );
+    }
+
+    if (loadError) {
+        return (
+            <div style={{ padding: '40px 20px', textAlign: 'center' }}>
+                <div className="glass-panel" style={{ maxWidth: '480px', margin: '0 auto', padding: '32px', borderLeft: '4px solid var(--accent-danger)' }}>
+                    <h3 style={{ color: 'var(--accent-danger)', marginBottom: '12px' }}>⚠️ Could Not Load Dashboard</h3>
+                    <p style={{ color: 'var(--text-muted)', marginBottom: '20px', lineHeight: '1.6' }}>
+                        The server did not respond in time. This can happen if the server just woke from sleep.
+                        Please wait a moment and try again.
+                    </p>
+                    <button className="btn btn-primary" onClick={() => window.location.reload()}>
+                        🔄 Retry
+                    </button>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div>

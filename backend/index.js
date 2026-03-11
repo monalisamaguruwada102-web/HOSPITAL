@@ -504,7 +504,7 @@ app.get('/api/pharmacy', (req, res) => {
     });
 });
 
-app.post('/api/pharmacy', (req, res) => {
+app.post('/api/pharmacy', requireRole(['Pharmacist', 'Admin']), (req, res) => {
     // Only Admin or Pharmacist can define new drugs
     const { drug_name, low_stock_threshold } = req.body;
     db.run(
