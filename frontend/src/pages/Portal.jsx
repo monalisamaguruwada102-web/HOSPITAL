@@ -311,8 +311,8 @@ function Portal() {
                         <p style={{ color: 'var(--text-secondary)', fontSize: '14px', lineHeight: '1.8' }}>
                             Main HQ: 123 Healthcare Blvd,<br/>
                             Medical District, State 45678<br/><br/>
-                            Phone: +1 (555) 000-1111<br/>
-                            Email: contact@ihms.premium
+                            Phone: 0710406602<br/>
+                            Email: brenda@hims.com
                         </p>
                     </div>
                 </div>
